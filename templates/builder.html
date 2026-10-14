@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% block title %}{{ bot_name }}. Chatbot Studio{% endblock %}
+{% block body_attrs %}data-page="builder" data-bot-id="{{ bot_id }}" data-base-url="{{ base_url }}"{% endblock %}
+{% block topbar_extra %}<a class="btn btn-ghost" href="/">← All bots</a>{% endblock %}
+{% block content %}
+<div class="builder">
+  <aside class="builder-nav">
+    <h2 id="bot-title" class="bot-title">{{ bot_name }}</h2>
+    <nav aria-label="Bot settings">
+      <div class="nav-group">Build</div>
+      <button class="tab-btn active" data-tab="overview">Setup</button>
+      <button class="tab-btn" data-tab="profile">Business behavior</button>
+      <button class="tab-btn" data-tab="behaviour">Voice &amp; instructions</button>
+      <button class="tab-btn" data-tab="guardrails">Guardrails &amp; mode</button>
+      <button class="tab-btn" data-tab="appearance">Appearance</button>
+      <div class="nav-group">Knowledge</div>
+      <button class="tab-btn" data-tab="training">Training</button>
+      <button class="tab-btn" data-tab="faq">What people ask</button>
+      <div class="nav-group">Connect</div>
+      <button class="tab-btn" data-tab="leadcapture">Lead capture</button>
+      <button class="tab-btn" data-tab="redirects">Redirects</button>
+      <button class="tab-btn" data-tab="analytics">Analytics</button>
+      <button class="tab-btn" data-tab="apikey">Model &amp; API key</button>
+      <button class="tab-btn" data-tab="embed">Embed</button>
+      <button class="tab-btn" data-tab="leads">Leads <span class="count" id="leads-count"></span></button>
+      <button class="tab-btn" data-tab="conversations">Conversations</button>
+    </nav>
+    <button class="btn btn-danger-ghost" id="delete-bot-btn">Delete bot</button>
+  </aside>
+
+  <section class="builder-panels">
+    <div class="tab-panel active" data-panel="overview">
+      <div class="setup-banner"><h2>Make this bot yours.</h2><p>Build its knowledge, choose how it should respond, then test a few real questions before adding it to your site.</p></div>
+      <div id="setup-checks" class="setup-checks"></div>
+      <div class="setup-actions"><article class="card"><h3>Shape the conversation</h3><p class="muted">Choose a business template, set the boundaries, and decide what happens next.</p><button class="btn" data-setup-tab="profile">Configure behavior</button></article><article class="card"><h3>Try it as a visitor</h3><p class="muted">Ask a real question and check the answer before adding this bot to your website.</p><a id="setup-demo" class="btn btn-primary" target="_blank" rel="noopener">Open test chat</a> <button class="btn" data-setup-tab="embed">Get embed code</button></article></div>
+      <p class="small muted">Settings apply when saved. Training updates apply after a successful job.</p>
+      <h3>Recent training jobs</h3><div id="setup-jobs" class="jobs-list"></div>
+    </div>
+
+    <!-- Behaviour & tone -->
+
+    <div class="tab-panel" data-panel="profile" id="behavior-profile">
+      <div class="profile-intro"><h2>How should this bot help?</h2><p class="muted">Give this business its own conversation style, intake questions, and next steps.</p></div><div class="profile-layout"><div class="card"><h3>Behavior settings</h3>
+      <label class="field"><span><input type="checkbox" name="enabled"> Use this behavior profile</span></label>
+      <label class="field"><span>Business template</span><select name="template"></select></label>
+      <button class="btn" id="use-behavior-template" disabled>Load template defaults</button><p class="small muted">Loading a template replaces the fields below. Existing knowledge, tone, and lead forms stay in their own tabs.</p>
+      <label class="field"><span>What should this bot help visitors do?</span><textarea name="goal" rows="3" maxlength="1000"></textarea></label>
+      <label class="field"><span>Response length</span><select name="response_length"><option value="short">Short</option><option value="balanced">Balanced</option><option value="detailed">Detailed</option></select></label>
+      <label class="field"><span>Contact capture</span><select name="lead_capture"><option value="off">Never show a contact form</option><option value="on_request">When requested or agreed to</option><option value="offer">Offer when relevant, then wait for agreement</option></select></label>
+      <fieldset><legend>Allowed actions</legend><label><input type="checkbox" name="action" value="lead_form"> Show contact form</label><br><label><input type="checkbox" name="action" value="handoff"> Request human help</label><br><label><input type="checkbox" name="action" value="redirect"> Link to approved pages</label></fieldset>
+      <p class="small muted">Actions also need their existing setup. Orders, refunds, and confirmed bookings are not connected actions.</p>
+      <label class="field"><span>Intake questions (one per line, up to 8)</span><textarea name="questions" rows="4"></textarea></label>
+      <label class="field"><span>Boundaries (one per line, up to 20)</span><textarea name="boundaries" rows="5"></textarea></label>
+      <label class="field"><span>Human help expectations</span><textarea name="handoff_message" rows="2" maxlength="500"></textarea></label>
+      <div class="save-row"><button class="btn btn-primary" id="save-behavior-profile" disabled>Save behavior profile</button> <button class="btn" id="preview-behavior-profile" disabled>Preview configuration</button></div>
+      <p role="status" aria-live="polite"></p><div class="card" id="behavior-result" hidden></div>
+      <p class="small muted">Action permissions are enforced by the server. Tone, questions, and boundaries guide the model; test its answers before sharing.</p>
+      </div><aside class="profile-guide"><h3>Start with the business</h3><p>Load a template, then adjust the purpose and questions to match how this team works.</p><h3>Choose the next step</h3><p>Allow contact forms, human help, or approved links. The preview shows what still needs connecting.</p><h3>Check real questions</h3><p>Save your settings, open the test chat from Setup, and try a typical request, a difficult question, and a request for a person.</p></aside></div>
+    </div>
+
+    <div class="tab-panel" data-panel="behaviour">
+      <div class="card">
+        <h3>System prompt</h3>
+        <p class="muted">Who is this bot, what should it do, what should it never do?</p>
+        <textarea id="f-system_prompt" rows="7" placeholder="You are the assistant for Acme Co. Help visitors understand our services and pricing. Never promise discounts. If asked about anything outside Acme, politely steer back."></textarea>
+      </div>
+      <div class="card">
+        <h3>Tone</h3>
+        <div class="tone-grid" id="tone-grid">
+          {% for tone in tones %}
+          <button class="tone-pill" data-tone="{{ tone }}">{{ tone }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card">
+        <h3>Messages</h3>
+        <label class="field"><span>Welcome message</span>
+          <input type="text" id="f-welcome_message" maxlength="500"></label>
+        <label class="field"><span>Fallback message <small class="muted">(when the answer isn't in the training)</small></span>
+          <input type="text" id="f-fallback_message" maxlength="500"></label>
+        <div class="field">
+          <span>Starter questions <small class="muted">(shown as tappable chips when the chat opens, max 6)</small></span>
+          <div id="starter-list" class="stack"></div>
+          <button class="btn btn-small" id="add-starter">+ Add starter question</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Human handoff</h3>
+        <label class="inline-check">
+          <input type="checkbox" id="f-handoff_enabled">
+          <span>Let visitors ask for a real person. the conversation gets flagged, you're notified
+          (via the lead webhook / alert email), and you can reply live from the Conversations tab.</span>
+        </label>
+      </div>
+      <div class="card">
+        <h3>Model</h3>
+        <div class="row">
+          <label class="field"><span>Provider</span>
+            <select id="f-provider">
+              <option value="">Platform default ({{ default_provider }})</option>
+              {% for p in providers %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+            </select></label>
+          <label class="field"><span>Model <small class="muted">(blank = provider default)</small></span>
+            <input type="text" id="f-model" list="model-options" placeholder="{{ default_models[default_provider] }}">
+            <datalist id="model-options"></datalist></label>
+        </div>
+        <label class="field"><span>Creativity <small class="muted">(<span id="temp-label"></span>. low = strict &amp; factual, high = freer wording)</small></span>
+          <input type="range" id="f-temperature" min="0" max="1" step="0.05"></label>
+        <script type="application/json" id="model-choices-json">{{ model_choices | tojson }}</script>
+      </div>
+      <div class="save-row"><button class="btn btn-primary" data-save="behaviour">Save behaviour</button></div>
+    </div>
+
+    <!-- Guardrails & mode -->
+    <div class="tab-panel" data-panel="guardrails">
+      <div class="card">
+        <h3>Hard guardrails</h3>
+        <p class="muted">One refusal topic per line. These are re-asserted at the top of the bot's
+        instructions on <strong>every</strong> turn and override everything else. The bot will
+        decline these no matter how a visitor phrases the request.</p>
+        <div class="card" id="guardrail-note" hidden style="background:var(--warn-bg, #fff7ed)">
+          <strong>Why this matters</strong>
+          <p class="muted small" id="guardrail-note-text"></p>
+        </div>
+        <textarea id="f-guardrails" rows="7" placeholder="e.g. Give legal advice or tell the caller what they should do
+Predict case outcomes, damages, or what a case is worth
+Confirm or imply that the firm represents the caller"></textarea>
+      </div>
+      <div class="card">
+        <h3>Deployment mode</h3>
+        <label class="field"><span>Mode</span>
+          <select id="f-mode">
+            <option value="public">Public website widget (embeddable)</option>
+            <option value="internal_kb">Internal knowledge base (passphrase-gated)</option>
+          </select></label>
+        <p class="muted small">Internal-KB bots aren't meant to be embedded on a public page. They
+        sit behind a shared passphrase and answer staff questions from your uploaded documents.</p>
+        <label class="inline-check">
+          <input type="checkbox" id="f-cite_sources">
+          <span>Show source citations under each answer (which document chunk it came from).
+          Recommended for internal knowledge bases.</span>
+        </label>
+      </div>
+      <div class="card" id="passphrase-card">
+        <h3>🔐 Access passphrase</h3>
+        <p class="muted">For internal-KB bots. Anyone opening the widget must enter this shared
+        passphrase before they can chat. Stored hashed; it's never shown again.</p>
+        <p id="passphrase-status" class="muted"></p>
+        <div class="row">
+          <input type="password" id="passphrase-input" placeholder="Shared passphrase" autocomplete="off">
+          <button class="btn btn-primary" id="passphrase-save">Set passphrase</button>
+          <button class="btn btn-danger-ghost" id="passphrase-clear">Remove</button>
+        </div>
+      </div>
+      <div class="save-row"><button class="btn btn-primary" data-save="guardrails">Save guardrails &amp; mode</button></div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="tab-panel" data-panel="appearance">
+      <div class="card">
+        <h3>Widget appearance</h3>
+        <div class="row">
+          <label class="field"><span>Theme color</span>
+            <input type="color" id="f-theme_color"></label>
+          <label class="field"><span>Launcher text</span>
+            <input type="text" id="f-launcher_text" maxlength="40"></label>
+          <label class="field"><span>Position</span>
+            <select id="f-position">
+              <option value="right">Bottom right</option>
+              <option value="left">Bottom left</option>
+            </select></label>
+        </div>
+        <div class="launcher-preview-zone">
+          <span class="muted">Preview:</span>
+          <button class="launcher-preview" id="launcher-preview"><span id="launcher-preview-text"></span></button>
+        </div>
+      </div>
+      <div class="save-row"><button class="btn btn-primary" data-save="appearance">Save appearance</button></div>
+    </div>
+
+    <!-- Training -->
+    <div class="tab-panel" data-panel="training">
+      <div class="training-forms">
+        <div class="card">
+          <h3>Paste text</h3>
+          <label class="field"><span>Title</span><input type="text" id="src-text-title" placeholder="Pricing page copy"></label>
+          <label class="field"><span>Content</span><textarea id="src-text-content" rows="6" placeholder="Paste docs, FAQs, policies…"></textarea></label>
+          <button class="btn btn-primary" id="add-text-btn">Add &amp; index</button>
+        </div>
+        <div class="card">
+          <h3>Q&amp;A pair</h3>
+          <label class="field"><span>Question</span><input type="text" id="src-qa-q" placeholder="Do you offer refunds?"></label>
+          <label class="field"><span>Answer</span><textarea id="src-qa-a" rows="4" placeholder="Yes, within 30 days of purchase…"></textarea></label>
+          <button class="btn btn-primary" id="add-qa-btn">Add Q&amp;A</button>
+        </div>
+        <div class="card">
+          <h3>Crawl a URL</h3>
+          <label class="field"><span>Start URL</span><input type="url" id="src-url" placeholder="https://example.com"></label>
+          <div class="row">
+            <label class="field"><span>Max pages</span><input type="number" id="src-url-pages" value="5" min="1" max="15"></label>
+            <label class="field"><span>Re-crawl</span>
+              <select id="src-url-recrawl">
+                <option value="0">Never</option>
+                <option value="24">Daily</option>
+                <option value="168">Weekly</option>
+              </select></label>
+          </div>
+          <button class="btn btn-primary" id="add-url-btn">Crawl &amp; index</button>
+          <p class="muted small" id="crawl-status"></p>
+        </div>
+        <div class="card">
+          <h3>Upload a file</h3>
+          <p class="muted small">PDF, DOCX, TXT or Markdown, up to 20&nbsp;MB.</p>
+          <label class="field"><span>File</span><input type="file" id="src-file" accept=".pdf,.docx,.txt,.md,.markdown"></label>
+          <button class="btn btn-primary" id="add-file-btn">Upload &amp; index</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Knowledge sources</h3><p class="muted small">Edit a source or restore a previous version. The current knowledge stays available while a replacement is prepared.</p><div id="training-jobs" class="jobs-list"></div>
+        <table class="data-table" id="sources-table">
+          <thead><tr><th>Type</th><th>Title</th><th>Chunks</th><th>Status</th><th>Re-crawl</th><th>Added</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="muted" id="sources-empty" hidden>Nothing yet. feed your bot with the forms above.</p>
+      </div>
+
+      <div class="card">
+        <h3>Answer gaps</h3>
+        <p class="muted">Real visitor questions your training couldn't answer. Turn them into Q&amp;A pairs.</p>
+        <div id="gaps-list" class="stack"></div>
+        <p class="muted" id="gaps-empty" hidden>No gaps logged. either no traffic yet, or your training is covering everything.</p>
+      </div>
+    </div>
+
+    <!-- What people ask (FAQ miner) -->
+    <div class="tab-panel" data-panel="faq">
+      <div class="card">
+        <div class="card-head">
+          <h3>What people ask</h3>
+          <button class="btn" id="faq-refresh">Re-mine questions</button>
+        </div>
+        <p class="muted">Real visitor questions from this bot's conversations, grouped by meaning and
+        ranked by how often (and how recently) they come up.
+        <span class="badge badge-warn">bot struggles</span> = the answers looked weak. retrieval gaps,
+        canned or very short replies, human handoffs, or visitors leaving right after.
+        Draft an FAQ answer, approve it into training, and it also joins the website FAQ export below.</p>
+        <div id="faq-clusters" class="stack"></div>
+        <p class="muted" id="faq-empty" hidden>No visitor questions mined yet. once people chat with the
+        bot, their questions show up here. Dismissed and approved questions stay hidden.</p>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h3>✅ Website FAQ (approved)</h3>
+          <div class="row">
+            <button class="btn" id="faq-copy-html">Copy HTML + schema.org</button>
+            <button class="btn" id="faq-copy-md">Copy Markdown</button>
+          </div>
+        </div>
+        <p class="muted">Every approved Q&amp;A is already in this bot's training. Paste the HTML export
+        into the website to publish an FAQ section. it includes <code>FAQPage</code> JSON-LD
+        (schema.org), so search engines and AI answer engines can pick it up.</p>
+        <table class="data-table" id="faq-entries-table">
+          <thead><tr><th>Question</th><th>Answer</th><th>Added</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="muted" id="faq-entries-empty" hidden>Nothing approved yet. approve a cluster above.</p>
+      </div>
+    </div>
+
+    <!-- Lead capture -->
+    <div class="tab-panel" data-panel="leadcapture">
+      <div class="card">
+        <h3>Form fields</h3>
+        <p class="muted">The widget renders these as an inline form when the bot decides to ask.</p>
+        <div id="lead-fields-list" class="stack"></div>
+        <button class="btn btn-small" id="add-lead-field">+ Add field</button>
+      </div>
+      <div class="card">
+        <h3>When should the bot ask?</h3>
+        <textarea id="f-lead_rule" rows="3" placeholder="e.g. When the visitor asks about pricing, wants a demo, or the bot can't answer their question. offer to have the team follow up."></textarea>
+        <p class="muted small">Plain English. Leave empty to disable lead capture entirely.</p>
+      </div>
+      <div class="card">
+        <h3>Lead alerts</h3>
+        <label class="field"><span>Webhook URL <small class="muted">(POSTs JSON on every new lead. works with Zapier, Make, GoHighLevel inbound webhooks…)</small></span>
+          <input type="url" id="f-lead_webhook_url" placeholder="https://hooks.example.com/…"></label>
+        <details class="muted small"><summary>Webhook payload example</summary><pre>{{ webhook_preview }}</pre></details>
+        <label class="field"><span>Email alerts to
+          {% if not smtp_configured %}<small class="badge badge-warn">SMTP not configured in .env. emails won't send</small>{% endif %}</span>
+          <input type="email" id="f-lead_alert_email" placeholder="you@company.com"></label>
+      </div>
+      <div class="save-row"><button class="btn btn-primary" data-save="leadcapture">Save lead capture</button></div>
+    </div>
+
+    <!-- Redirects -->
+    <div class="tab-panel" data-panel="redirects">
+      <div class="card">
+        <h3>Pages the bot can send visitors to</h3>
+        <p class="muted">The AI picks by intent. <strong>Button</strong> shows a link; <strong>Auto</strong> navigates after a short countdown.</p>
+        <table class="data-table" id="redirects-table">
+          <thead><tr><th>Title</th><th>URL</th><th>Description (helps the AI choose)</th><th>Mode</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="redirect-form row">
+          <input type="text" id="rd-title" placeholder="Pricing page">
+          <input type="text" id="rd-url" placeholder="https://example.com/pricing or /pricing">
+          <input type="text" id="rd-desc" placeholder="Plans, costs, billing questions">
+          <select id="rd-mode"><option value="button">Button</option><option value="auto">Auto</option></select>
+          <button class="btn btn-primary" id="add-redirect-btn">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics -->
+    <div class="tab-panel" data-panel="analytics">
+      <div class="card">
+        <h3>Last 30 days</h3>
+        <div class="usage-grid" id="analytics-kpis"></div>
+        <p class="muted small">Answer rate = share of AI replies grounded in your training
+        (the rest fell back / logged a gap). Conversion = leads ÷ conversations.</p>
+      </div>
+      <div class="card">
+        <h3>Daily activity (14 days)</h3>
+        <div class="chart" id="chart-messages"></div>
+        <p class="muted small chart-caption">Visitor messages per day <span class="chart-dot" style="background:var(--accent)"></span> · leads per day <span class="chart-dot" style="background:#16a34a"></span></p>
+      </div>
+    </div>
+
+    <!-- API key & billing -->
+    <div class="tab-panel" data-panel="apikey">
+      <div class="card">
+        <h3>Per-bot API key</h3>
+        <p class="muted">Optional. Give this bot its own provider key so a client's usage bills to <em>their</em> account instead of the platform key. Keys are write-only: stored encrypted, never shown again.</p>
+        <p>Provider in use: <strong id="apikey-provider"></strong> · Model: <strong id="apikey-model"></strong></p>
+        <p id="apikey-status" class="muted"></p>
+        <div class="row">
+          <input type="password" id="apikey-input" placeholder="sk-… (write-only)" autocomplete="off">
+          <button class="btn btn-primary" id="apikey-save">Save key</button>
+          <button class="btn" id="apikey-test">Test</button>
+          <button class="btn btn-danger-ghost" id="apikey-clear">Remove</button>
+        </div>
+        <p id="apikey-test-result" class="muted small"></p>
+      </div>
+      <div class="card">
+        <h3>Usage</h3>
+        <div class="usage-grid" id="usage-grid"></div>
+        <p class="muted small">Token counts come from the provider's own usage numbers. they map directly to what gets billed.</p>
+      </div>
+    </div>
+
+    <!-- Embed -->
+    <div class="tab-panel" data-panel="embed">
+      <div class="card">
+        <h3>Embed on any site</h3>
+        <p class="muted">Paste this once, right before <code>&lt;/body&gt;</code>. Works on WordPress, Webflow, Shopify, plain HTML. The widget renders in a Shadow DOM so the host site's CSS can't break it.</p>
+        <pre class="snippet" id="embed-snippet"></pre>
+        <div class="row">
+          <button class="btn btn-primary" id="copy-snippet">Copy snippet</button>
+          <a class="btn" id="open-demo" target="_blank">Open test page ↗</a>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Embed key</h3>
+        <p>Current key: <code id="embed-key"></code></p>
+        <button class="btn btn-danger-ghost" id="rotate-key">Rotate key</button>
+        <p class="muted small">Rotating invalidates the old key immediately. you'll need to update the snippet anywhere it's installed.</p>
+      </div>
+    </div>
+
+    <!-- Leads -->
+    <div class="tab-panel" data-panel="leads">
+      <div class="card">
+        <div class="card-head">
+          <h3>Captured leads</h3>
+          <a class="btn" id="export-leads">Export CSV</a>
+        </div>
+        <table class="data-table" id="leads-table"><thead></thead><tbody></tbody></table>
+        <p class="muted" id="leads-empty" hidden>No leads yet.</p>
+      </div>
+    </div>
+
+    <!-- Conversations -->
+    <div class="tab-panel" data-panel="conversations">
+      <div class="card">
+        <h3>Conversations</h3>
+        <table class="data-table" id="convos-table">
+          <thead><tr><th>First message</th><th>Messages</th><th>Status</th><th>Lead?</th><th>Last activity</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="muted" id="convos-empty" hidden>No conversations yet. open the test page and say hi.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="transcript-modal" hidden>
+  <div class="modal modal-wide">
+    <div class="card-head">
+      <h2>Transcript <span id="transcript-status"></span></h2>
+      <div class="row">
+        <button class="btn btn-small" id="handback-btn" hidden>Hand back to bot</button>
+        <button class="btn" data-close-modal>Close</button>
+      </div>
+    </div>
+    <div id="transcript-body" class="transcript"></div>
+    <div class="reply-row">
+      <textarea id="agent-reply" rows="2" placeholder="Reply as the team. appears live in the visitor's chat and pauses the AI…"></textarea>
+      <button class="btn btn-primary" id="send-agent-reply">Send</button>
+    </div>
+  </div>
+</div>
+<dialog id="source-editor" class="studio-dialog" aria-labelledby="source-editor-title"><div class="dialog-heading"><h2 id="source-editor-title">Edit knowledge source</h2><button class="btn btn-ghost" id="close-source-editor" aria-label="Close">✕</button></div><form id="source-editor-form"><label class="field"><span>Title</span><input id="edit-source-title" type="text" maxlength="200" required></label><label class="field"><span>Training content</span><textarea id="edit-source-content" rows="12" maxlength="500000" required></textarea></label><p class="small muted">A new version becomes active only after it has been indexed successfully.</p><div class="modal-actions"><button class="btn btn-primary" id="save-source">Save and retrain</button></div></form><h3>Previous versions</h3><div id="source-versions"></div></dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='dashboard.js') }}"></script><script src="{{ url_for('static', filename='behavior.js') }}"></script>{% endblock %}

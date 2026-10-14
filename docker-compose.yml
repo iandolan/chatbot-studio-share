@@ -1,0 +1,35 @@
+# Traefik (via Coolify) terminates TLS,
+# containers join the external `coolify` network. Adjust the Host() rule.
+services:
+  chatbot-studio:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PRODUCTION: "1"
+    volumes:
+      - ./data:/app/data
+    # Optional, only if the sites you crawl are hosted on this same server:
+    # containers often cannot reach the server's own public IP (hairpin NAT),
+    # so map those hostnames to your reverse proxy's container IP, and list
+    # the same hostnames in CRAWLER_PRIVATE_ALLOWLIST. Re-check the IP if the
+    # proxy container is ever recreated; a stale one fails every crawl silently.
+    # extra_hosts:
+    #   - "example.com:10.0.0.10"
+    networks:
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.chatbot-studio.rule=Host(`bots.example.com`)
+      - traefik.http.routers.chatbot-studio.entrypoints=https
+      - traefik.http.routers.chatbot-studio.tls=true
+      - traefik.http.routers.chatbot-studio.tls.certresolver=letsencrypt
+      - traefik.http.services.chatbot-studio.loadbalancer.server.port=8080
+      - traefik.http.routers.chatbot-studio-http.rule=Host(`bots.example.com`)
+      - traefik.http.routers.chatbot-studio-http.entrypoints=http
+      - traefik.http.routers.chatbot-studio-http.middlewares=redirect-to-https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+
+networks:
+  coolify:
+    external: true

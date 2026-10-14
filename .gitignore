@@ -1,0 +1,9 @@
+.env
+data/
+__pycache__/
+*.pyc
+.venv/
+venv/
+# Backups like .env.bak-<stamp> hold live secrets; only the example is tracked.
+.env.*
+!.env.example

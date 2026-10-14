@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — Chatbot Studio</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body class="login-body">
+  <form class="login-card" method="post">
+    <h1>💬 Chatbot Studio</h1>
+    <p class="muted">Enter the admin password to continue.</p>
+    {% if error %}<p class="error-text">{{ error }}</p>{% endif %}
+    <input type="password" name="password" placeholder="Admin password" autofocus autocomplete="current-password">
+    <button type="submit" class="btn btn-primary">Sign in</button>
+  </form>
+</body>
+</html>

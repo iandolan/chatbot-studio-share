@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block body_attrs %}data-page="workspace"{% endblock %}
+{% block content %}
+<div class="studio-shell">
+  <aside class="studio-nav" aria-label="Workspace navigation">
+    <div class="studio-label">Workspace</div>
+    <button class="studio-nav-item active" data-view="overview">Overview</button>
+    <button class="studio-nav-item" data-view="inbox">Inbox <span id="waiting-count"></span></button>
+    <button class="studio-nav-item" data-view="delivery">Notifications <span id="failed-count"></span></button>
+    <div class="studio-nav-note"><strong>Built around the conversation.</strong><p>Train a bot, test its answers, then add it to your website.</p></div>
+  </aside>
+  <section class="studio-main">
+    <div class="studio-heading"><div><h1 id="view-title">Studio overview</h1><p class="muted" id="view-description">Your bots and visitor conversations, in one place.</p></div><button class="btn btn-primary" id="new-bot-btn">Create bot</button></div>
+    <div id="workspace-error" class="notice error-text" role="alert" hidden></div>
+    <section data-view-panel="overview">
+      <div class="studio-summary" id="workspace-summary" aria-label="Workspace activity"></div>
+      <div class="directory-head"><h2>Your bots</h2><label class="search-label"><span class="sr-only">Find a bot</span><input id="bot-search" type="search" placeholder="Find a bot"></label></div>
+      <div class="bot-directory" id="bot-directory"><p class="empty-state">Loading your workspace...</p></div>
+      <div class="studio-footnote">Setup checks show configuration status. Test the answers before sharing a bot with visitors.</div>
+    </section>
+    <section data-view-panel="inbox" hidden>
+      <div class="inbox-filters"><label><span class="sr-only">Conversation status</span><select id="inbox-status"><option value="">Open conversations</option><option value="needs_human">Waiting for a person</option><option value="human">With the team</option><option value="bot">With the bot</option><option value="resolved">Resolved</option><option value="all">All conversations</option></select></label><label><span class="sr-only">Bot</span><select id="inbox-bot"><option value="">All bots</option></select></label><label class="search-label"><span class="sr-only">Search conversations</span><input id="inbox-search" type="search" placeholder="Search conversations"></label><button class="btn" id="refresh-inbox">Refresh</button></div>
+      <div class="inbox-layout"><div class="inbox-list" id="inbox-list"></div><div class="inbox-detail" id="inbox-detail"><div class="empty-state"><h2>Pick a conversation</h2><p>Read the history and reply to a visitor here.</p></div></div></div>
+      <div class="inbox-pagination"><button class="btn btn-small" id="inbox-prev">Previous</button><span id="inbox-page"></span><button class="btn btn-small" id="inbox-next">Next</button></div>
+    </section>
+    <section data-view-panel="delivery" hidden><div class="notice">Notifications are saved before sending. Temporary failures retry automatically. You can retry a failed delivery below.</div><div id="delivery-list"></div></section>
+  </section>
+</div>
+<dialog id="create-dialog" class="studio-dialog" aria-labelledby="create-title">
+  <form id="create-form"><div class="dialog-heading"><h2 id="create-title">Create a bot</h2><button class="btn btn-ghost" type="button" data-close-dialog aria-label="Close">✕</button></div><p class="muted">Start with a template. You can change every setting later.</p><label class="field"><span>Bot name</span><input id="new-name" type="text" maxlength="80" required placeholder="e.g. Acme Support"></label><label class="field"><span>Starting template</span><select id="new-preset"><option value="">Blank bot</option></select></label><label class="field"><span>Website to train from <small class="muted">(optional)</small></span><input id="new-url" type="url" placeholder="https://example.com"></label><p class="small muted">The website import runs in the background. The setup screen shows its progress.</p><p id="create-error" class="error-text" role="alert"></p><div class="modal-actions"><button class="btn" type="button" data-close-dialog>Cancel</button><button class="btn btn-primary" id="create-submit">Create and set up</button></div></form>
+</dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='studio.js') }}"></script>{% endblock %}

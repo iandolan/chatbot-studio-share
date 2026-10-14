@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Chatbot Studio{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='workspace-design.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+</head>
+<body {% block body_attrs %}{% endblock %}>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">···</span> Chatbot Studio</a>
+    <div class="topbar-right">
+      {% if mock_mode %}<span class="badge badge-warn" title="Preview uses simulated answers. Configure a provider to use live AI.">Preview mode</span>{% endif %}
+      {% block topbar_extra %}{% endblock %}
+    </div>
+  </header>
+  <main class="page">
+    {% if budget and budget.reached %}
+    <div class="banner banner-budget" role="alert">
+      ⛔ <strong>Daily AI budget reached</strong>. {{ budget.calls }} of {{ budget.cap }} LLM calls
+      used today (UTC). Bots answer with their fallback message until midnight UTC.
+      Raise <code>GLOBAL_DAILY_LLM_CALLS</code> in <code>.env</code> to lift the cap.
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
